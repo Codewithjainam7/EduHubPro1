@@ -1,0 +1,5 @@
+{
+  "name": "ArchiRAG: Enterprise Knowledge Engine",
+  "description": "A production-grade RAG chatbot featuring configurable chunking with overlap, semantic search via embeddings, and grounded answer generation with citations.",
+  "requestFramePermissions": []
+}
