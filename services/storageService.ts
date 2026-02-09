@@ -2,7 +2,7 @@
 import { IngestedDocument, DocumentChunk } from '../types';
 
 const DB_NAME = 'eduhub_rag_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Increment to force schema upgrade
 const DOCUMENTS_STORE = 'documents';
 const CHUNKS_STORE = 'chunks';
 

@@ -6,7 +6,7 @@ export const DEFAULT_CONFIG: RagConfig = {
   chunkSize: 1000,
   chunkOverlap: 200,
   topK: 6,
-  modelName: 'gemini-2.0-flash-exp',
+  modelName: 'gemini-2.5-flash',
   embeddingModel: 'text-embedding-004',
   temperature: 0.3,
   strictness: 'factual',
