@@ -231,42 +231,96 @@ export class RagEngine {
   }
 
   /**
-   * Feature 2: Retrieval Strategy Auto-Selection
+   * Feature 2: Retrieval Strategy Auto-Selection - Enhanced
    */
   private determineStrategy(query: string): RetrievalStrategy {
     const q = query.toLowerCase();
-    if (q.length < 20) return 'keyword';
-    if (q.includes('summary') || q.includes('overall') || q.includes('how many')) return 'summary';
-    if (q.includes('explain') || q.includes('relationship')) return 'analytical';
+    const wordCount = q.split(/\s+/).length;
+
+    // Short queries benefit from keyword search
+    if (wordCount <= 3) return 'keyword';
+
+    // Summary-oriented queries
+    if (q.includes('summary') || q.includes('overall') || q.includes('how many') ||
+      q.includes('list all') || q.includes('what are')) return 'summary';
+
+    // Analytical/explanatory queries
+    if (q.includes('explain') || q.includes('relationship') || q.includes('why') ||
+      q.includes('how does') || q.includes('compare') || q.includes('difference')) return 'analytical';
+
     return 'hybrid';
   }
 
+  /**
+   * Extract meaningful keywords from query - Enhanced
+   */
+  private extractKeywords(query: string): string[] {
+    const stopWords = new Set(['the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'but', 'in', 'with', 'to', 'for', 'of', 'that', 'this', 'it', 'from', 'as', 'are', 'was', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'what', 'how', 'who', 'when', 'where', 'why']);
+
+    const words = query.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !stopWords.has(w));
+
+    // Also extract bigrams for phrase matching
+    const bigrams: string[] = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      bigrams.push(`${words[i]} ${words[i + 1]}`);
+    }
+
+    return [...words, ...bigrams];
+  }
+
   async search(query: string, config: RagConfig): Promise<SearchResult[]> {
+    await this.ensureInitialized();
+
     const strategy = this.determineStrategy(query);
     const queryEmbedding = await geminiService.getEmbedding(query, config.embeddingModel);
-    const keywords = query.toLowerCase().split(/\W+/).filter(w => w.length > 3);
+    const keywords = this.extractKeywords(query);
+    const queryLower = query.toLowerCase();
 
     return this.vectorStore
       .map(chunk => {
         let score = 0;
+        const chunkLower = chunk.text.toLowerCase();
 
-        // Semantic component
+        // 1. Semantic similarity (base score)
         if (chunk.embedding) {
-          score += queryEmbedding.reduce((acc, val, i) => acc + val * (chunk.embedding![i] || 0), 0);
+          const dotProduct = queryEmbedding.reduce((acc, val, i) => acc + val * (chunk.embedding![i] || 0), 0);
+          score += dotProduct;
         }
 
-        // Feature 2: Keyword Boosting for specific queries
+        // 2. Exact phrase match bonus (highest priority)
+        if (chunkLower.includes(queryLower)) {
+          score += 0.5;
+        }
+
+        // 3. Keyword matching - count matches and boost
+        const matchedKeywords = keywords.filter(k => chunkLower.includes(k));
+        const keywordScore = (matchedKeywords.length / Math.max(keywords.length, 1)) * 0.3;
+        score += keywordScore;
+
+        // 4. Keyword density bonus (more matches in shorter text = more relevant)
+        if (matchedKeywords.length > 0) {
+          const density = matchedKeywords.length / (chunk.text.length / 100);
+          score += Math.min(density * 0.1, 0.2);
+        }
+
+        // 5. Strategy-specific boosting
         if (strategy === 'keyword' || strategy === 'hybrid') {
-          const chunkLower = chunk.text.toLowerCase();
-          const keywordMatches = keywords.filter(k => chunkLower.includes(k)).length;
-          score += (keywordMatches * 0.1);
+          score += matchedKeywords.length * 0.05;
         }
 
-        // Feature 3: Weighting by trust and metadata
-        score *= (chunk.weight * chunk.metadata.trustScore);
+        // 6. Freshness bonus (newer chunks slightly preferred)
+        const ageInDays = (Date.now() - chunk.metadata.freshness) / (1000 * 60 * 60 * 24);
+        const freshnessMultiplier = Math.max(0.9, 1 - (ageInDays * 0.001));
+
+        // 7. Apply trust and weight multipliers
+        score *= (chunk.weight * chunk.metadata.trustScore * freshnessMultiplier);
 
         return { chunk, score, strategyUsed: strategy };
       })
+      .filter(result => result.score > 0.01) // Filter out very low relevance
       .sort((a, b) => b.score - a.score)
       .slice(0, config.topK);
   }
