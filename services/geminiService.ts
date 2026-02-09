@@ -63,7 +63,7 @@ export class GeminiService {
     try {
       const response = await this.withRetry(
         () => ai.models.generateContent({
-          model: "gemini-3-flash-preview",
+          model: "gemini-2.5-flash",
           contents: `Extract 3-5 key concepts from this text and turn them into Flashcards (Question and Answer pairs). 
           Text: ${text}`,
           config: {

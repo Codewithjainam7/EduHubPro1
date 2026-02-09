@@ -9,38 +9,46 @@ import {
   PageContent
 } from '../types';
 import { geminiService } from './geminiService';
+import { storageService } from './storageService';
 
 export class RagEngine {
   private documents: IngestedDocument[] = [];
   private vectorStore: DocumentChunk[] = [];
-  private readonly STORAGE_KEY = 'eduhub_rag_state';
+  private isInitialized = false;
 
   constructor() {
     this.loadState();
   }
 
-  private saveState() {
+  private async saveState() {
     try {
-      const state = {
-        documents: this.documents,
-        vectorStore: this.vectorStore
-      };
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+      await storageService.saveDocuments(this.documents);
+      await storageService.saveChunks(this.vectorStore);
+      console.log('State saved to IndexedDB successfully');
     } catch (e) {
-      console.warn('Failed to save state to localStorage (quota exceeded?)', e);
+      console.error('Failed to save state to IndexedDB:', e);
     }
   }
 
-  private loadState() {
+  private async loadState() {
     try {
-      const saved = localStorage.getItem(this.STORAGE_KEY);
-      if (saved) {
-        const state = JSON.parse(saved);
-        this.documents = state.documents || [];
-        this.vectorStore = state.vectorStore || [];
+      const docs = await storageService.loadDocuments();
+      const chunks = await storageService.loadChunks();
+
+      // Reconstruct documents with their chunks
+      this.documents = docs.map(doc => ({
+        ...doc,
+        chunks: chunks.filter(c => c.metadata.documentId === doc.id)
+      }));
+      this.vectorStore = chunks;
+      this.isInitialized = true;
+
+      if (docs.length > 0) {
+        console.log(`Loaded ${docs.length} documents from IndexedDB`);
       }
     } catch (e) {
-      console.error('Failed to load state', e);
+      console.error('Failed to load state from IndexedDB:', e);
+      this.isInitialized = true;
     }
   }
 
@@ -168,7 +176,7 @@ export class RagEngine {
 
     this.documents.push(doc);
     this.vectorStore.push(...allChunks);
-    this.saveState();
+    await this.saveState();
     return doc;
   }
 
@@ -207,7 +215,7 @@ export class RagEngine {
 
     this.documents.push(doc);
     this.vectorStore.push(...chunks);
-    this.saveState();
+    await this.saveState();
     return doc;
   }
 
@@ -217,7 +225,7 @@ export class RagEngine {
   async removeDocument(id: string): Promise<void> {
     this.documents = this.documents.filter(d => d.id !== id);
     this.vectorStore = this.vectorStore.filter(c => c.metadata.documentId !== id);
-    this.saveState();
+    await this.saveState();
   }
 
   /**

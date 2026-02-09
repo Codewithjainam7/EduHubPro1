@@ -139,10 +139,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleClearData = () => {
+  const handleClearData = async () => {
     if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
       localStorage.removeItem('eduhub_chat_history');
-      localStorage.removeItem('eduhub_rag_state');
+      // Clear IndexedDB data
+      const { storageService } = await import('./services/storageService');
+      await storageService.clearAll();
       setDocuments([]);
       setMessages([]);
       setFlashcards([]);
