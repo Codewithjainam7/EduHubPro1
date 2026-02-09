@@ -13,7 +13,7 @@ export class GeminiService {
     const size = 1024;
     const vector = new Array(size).fill(0);
     const words = text.toLowerCase().split(/\W+/);
-    
+
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
       for (let j = 0; j < word.length; j++) {
@@ -22,7 +22,7 @@ export class GeminiService {
         vector[index] += 1 / (i + 1);
       }
     }
-    
+
     const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
     return vector.map(v => (magnitude > 0 ? v / magnitude : 0));
   }
@@ -63,17 +63,22 @@ export class GeminiService {
   }
 
   async generateAnswer(
-    query: string, 
-    context: SearchResult[], 
+    query: string,
+    context: SearchResult[],
     config: RagConfig & { deviceType?: 'mobile' | 'desktop' }
   ): Promise<AiResponse> {
     const ai = this.getAI();
-    
+
     const contextText = context
-      .map((res, i) => `[CHUNK ${i}]\nSource: ${res.chunk.metadata.sourceFileName}\nContent: ${res.chunk.text}`)
+      .map((res, i) => {
+        const pageInfo = res.chunk.metadata.pageNumber
+          ? `, Page: ${res.chunk.metadata.pageNumber}`
+          : '';
+        return `[CHUNK ${i}]\nSource: ${res.chunk.metadata.sourceFileName}${pageInfo}\nContent: ${res.chunk.text}`;
+      })
       .join('\n\n');
 
-    const deviceConstraint = config.deviceType === 'mobile' 
+    const deviceConstraint = config.deviceType === 'mobile'
       ? "\nDEVICE: Mobile View. Concise delivery required."
       : "\nDEVICE: Desktop View. Full depth allowed.";
 

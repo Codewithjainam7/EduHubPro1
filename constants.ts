@@ -20,13 +20,13 @@ export const RESPONSE_SCHEMA = {
     answer: { type: Type.STRING, description: "The grounded answer based strictly on context shards." },
     confidence: { type: Type.NUMBER, description: "Scale 0-1 of evidence strength." },
     reasoning: { type: Type.STRING, description: "Brief internal logic for chunk usage." },
-    assumptions: { 
-      type: Type.ARRAY, 
+    assumptions: {
+      type: Type.ARRAY,
       items: { type: Type.STRING },
       description: "Any inferences or assumptions made that weren't explicitly in the text."
     },
-    scope: { 
-      type: Type.STRING, 
+    scope: {
+      type: Type.STRING,
       enum: ["narrow", "broad", "exploratory"],
       description: "Detected scope of the user query."
     },
@@ -34,8 +34,8 @@ export const RESPONSE_SCHEMA = {
       type: Type.BOOLEAN,
       description: "Whether the provided chunks contain contradictory information."
     },
-    followUps: { 
-      type: Type.ARRAY, 
+    followUps: {
+      type: Type.ARRAY,
       items: { type: Type.STRING },
       description: "3 highly relevant follow-up queries."
     }
@@ -54,4 +54,4 @@ INTELLIGENCE PROTOCOLS:
 FORMATTING:
 - Professional, structured markdown.
 - Use bullet points for readability.
-- Cite sources: [Source: filename, Chunk: index]`;
+- Cite sources with page numbers when available: [Source: filename, Page: X, Chunk: index] or [Source: filename, Chunk: index] if no page number.`;

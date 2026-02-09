@@ -26,6 +26,12 @@ export interface Flashcard {
 export type RetrievalStrategy = 'semantic' | 'keyword' | 'hybrid' | 'summary' | 'analytical';
 export type QueryScope = 'narrow' | 'broad' | 'exploratory';
 
+// For tracking page-level content from PDFs
+export interface PageContent {
+  pageNumber: number;
+  text: string;
+}
+
 export interface ChunkMetadata {
   id: string;
   documentId: string;

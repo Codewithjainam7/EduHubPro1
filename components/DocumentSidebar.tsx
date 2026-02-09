@@ -16,28 +16,29 @@ interface DocumentSidebarProps {
   setIsProcessing: (val: boolean) => void;
 }
 
-const DocumentSidebar: React.FC<DocumentSidebarProps> = ({ 
-  documents, 
-  onIngest, 
+const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
+  documents,
+  onIngest,
   onRemove,
-  config, 
+  config,
   isProcessing,
   setIsProcessing
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const extractTextFromPdf = async (arrayBuffer: ArrayBuffer): Promise<string> => {
+  // Returns array of {pageNumber, text} for page-level citation tracking
+  const extractTextFromPdf = async (arrayBuffer: ArrayBuffer): Promise<{ pageNumber: number, text: string }[]> => {
     const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
-    let fullText = "";
+    const pages: { pageNumber: number, text: string }[] = [];
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
       const strings = content.items.map((item: any) => item.str);
-      fullText += strings.join(" ") + "\n";
+      pages.push({ pageNumber: i, text: strings.join(" ") });
     }
-    return fullText;
+    return pages;
   };
 
   const extractTextFromDocx = async (arrayBuffer: ArrayBuffer): Promise<string> => {
@@ -53,20 +54,22 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     setError(null);
 
     try {
-      let text = "";
+      let doc;
       const extension = file.name.split('.').pop()?.toLowerCase();
 
       if (extension === 'pdf') {
         const arrayBuffer = await file.arrayBuffer();
-        text = await extractTextFromPdf(arrayBuffer);
+        const pages = await extractTextFromPdf(arrayBuffer);
+        doc = await ragEngine.ingestDocumentWithPages(file.name, file.type, pages, config);
       } else if (extension === 'docx') {
         const arrayBuffer = await file.arrayBuffer();
-        text = await extractTextFromDocx(arrayBuffer);
+        const text = await extractTextFromDocx(arrayBuffer);
+        doc = await ragEngine.ingestDocument(file.name, file.type, text, config);
       } else {
-        text = await file.text();
+        const text = await file.text();
+        doc = await ragEngine.ingestDocument(file.name, file.type, text, config);
       }
 
-      const doc = await ragEngine.ingestDocument(file.name, file.type, text, config);
       onIngest(doc);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
@@ -97,7 +100,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
               </div>
               <span className="text-xs font-bold text-slate-300 truncate">{doc.fileName}</span>
             </div>
-            <button 
+            <button
               onClick={() => onRemove(doc.id)}
               className="p-1 text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
             >

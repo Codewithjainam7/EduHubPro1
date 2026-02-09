@@ -115,8 +115,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
     if (inList) finalLines.push('</ul>');
 
-    // 6. Citation "Shard" Tags
+    // 6. Citation "Shard" Tags - Support both with and without page numbers
     let finalHtml = finalLines.join('')
+      .replace(/\[Source: (.*?), Page: (\d+), Chunk: (.*?)\]/g,
+        '<span class="inline-flex items-center px-2 py-1 mx-1 rounded-md bg-blue-600/10 border border-blue-500/40 text-[9px] font-mono text-blue-400 font-black uppercase tracking-tighter hover:bg-blue-600 hover:text-white transition-all cursor-help shadow-[0_0_10px_rgba(59,130,246,0.1)]">P$2 SHARD #$3</span>')
       .replace(/\[Source: (.*?), Chunk: (.*?)\]/g,
         '<span class="inline-flex items-center px-2 py-1 mx-1 rounded-md bg-blue-600/10 border border-blue-500/40 text-[9px] font-mono text-blue-400 font-black uppercase tracking-tighter hover:bg-blue-600 hover:text-white transition-all cursor-help shadow-[0_0_10px_rgba(59,130,246,0.1)]">SHARD #$2</span>');
 
@@ -217,8 +219,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                     onClick={() => handleCreateCards(msg.id, msg.content)}
                     disabled={isGeneratingCards === msg.id}
                     className={`flex items-center space-x-3 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all px-6 py-3 rounded-2xl border ${isGeneratingCards === msg.id
-                        ? 'bg-slate-800 text-slate-500 border-white/5'
-                        : 'bg-indigo-500/5 text-indigo-400 border-indigo-500/20 hover:border-indigo-500/60 hover:bg-indigo-500/10 shadow-lg shadow-indigo-500/5'
+                      ? 'bg-slate-800 text-slate-500 border-white/5'
+                      : 'bg-indigo-500/5 text-indigo-400 border-indigo-500/20 hover:border-indigo-500/60 hover:bg-indigo-500/10 shadow-lg shadow-indigo-500/5'
                       }`}
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>

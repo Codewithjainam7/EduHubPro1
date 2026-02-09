@@ -1,11 +1,12 @@
 
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  DocumentChunk, 
-  IngestedDocument, 
-  RagConfig, 
-  SearchResult, 
-  RetrievalStrategy 
+import {
+  DocumentChunk,
+  IngestedDocument,
+  RagConfig,
+  SearchResult,
+  RetrievalStrategy,
+  PageContent
 } from '../types';
 import { geminiService } from './geminiService';
 
@@ -34,10 +35,11 @@ export class RagEngine {
   }
 
   private createChunks(
-    text: string, 
-    docId: string, 
-    fileName: string, 
-    config: RagConfig
+    text: string,
+    docId: string,
+    fileName: string,
+    config: RagConfig,
+    pageNumber?: number
   ): DocumentChunk[] {
     const { chunkSize, chunkOverlap } = config;
     const chunks: DocumentChunk[] = [];
@@ -54,8 +56,8 @@ export class RagEngine {
 
       if (chunkText.trim().length > 0) {
         // Feature 3: Initial Weighting
-        const weight = 1.0; 
-        
+        const weight = 1.0;
+
         chunks.push({
           id: uuidv4(),
           text: chunkText,
@@ -65,6 +67,7 @@ export class RagEngine {
             documentId: docId,
             chunkIndex,
             sourceFileName: fileName,
+            pageNumber: pageNumber, // Track page number
             startChar: currentWordIndex,
             endChar: endWordIndex,
             trustScore: 1.0,
@@ -81,10 +84,67 @@ export class RagEngine {
     return chunks;
   }
 
+  // New method for ingesting PDFs with page-level tracking
+  async ingestDocumentWithPages(
+    name: string,
+    type: string,
+    pages: PageContent[],
+    config: RagConfig
+  ): Promise<IngestedDocument> {
+    const fullText = pages.map(p => p.text).join('\n');
+    const cleanText = this.normalizeText(fullText);
+    const hash = this.generateHash(cleanText);
+
+    // Feature 5: Redundancy Detection
+    const duplicate = this.documents.find(d => d.hash === hash);
+    if (duplicate) {
+      throw new Error(`Conflict Detected: Document ${name} is identical to an existing asset.`);
+    }
+
+    const docId = uuidv4();
+
+    // Create chunks for each page, preserving page numbers
+    let allChunks: DocumentChunk[] = [];
+    for (const page of pages) {
+      const pageChunks = this.createChunks(
+        this.normalizeText(page.text),
+        docId,
+        name,
+        config,
+        page.pageNumber
+      );
+      allChunks = allChunks.concat(pageChunks);
+    }
+
+    // Re-index chunk indices globally
+    allChunks.forEach((chunk, i) => {
+      chunk.metadata.chunkIndex = i;
+    });
+
+    await Promise.all(allChunks.map(async (chunk) => {
+      chunk.embedding = await geminiService.getEmbedding(chunk.text, config.embeddingModel);
+    }));
+
+    const doc: IngestedDocument = {
+      id: docId,
+      fileName: name,
+      fileType: type,
+      rawText: cleanText,
+      chunks: allChunks,
+      ingestedAt: Date.now(),
+      status: 'indexed',
+      hash
+    };
+
+    this.documents.push(doc);
+    this.vectorStore.push(...allChunks);
+    return doc;
+  }
+
   async ingestDocument(
-    name: string, 
-    type: string, 
-    rawContent: string, 
+    name: string,
+    type: string,
+    rawContent: string,
     config: RagConfig
   ): Promise<IngestedDocument> {
     const cleanText = this.normalizeText(rawContent);
@@ -138,7 +198,7 @@ export class RagEngine {
     return this.vectorStore
       .map(chunk => {
         let score = 0;
-        
+
         // Semantic component
         if (chunk.embedding) {
           score += queryEmbedding.reduce((acc, val, i) => acc + val * (chunk.embedding![i] || 0), 0);
