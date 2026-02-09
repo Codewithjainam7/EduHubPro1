@@ -63,15 +63,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
     // 1. Code Blocks (Blue Themed)
     content = content.replace(/```([\s\S]*?)```/g, (match, code) => {
-      return `<div class="my-6 bg-slate-950 border border-blue-500/20 rounded-2xl overflow-hidden shadow-2xl relative group">
+      return `<div class="my-4 bg-slate-950 border border-blue-500/20 rounded-xl overflow-hidden shadow-xl relative group">
         <div class="bg-blue-500/10 px-4 py-2 border-b border-blue-500/10 flex justify-between items-center">
-          <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Neural Logic Buffer</span>
+          <span class="text-[9px] font-black text-blue-400 uppercase tracking-widest">Code Block</span>
           <div class="flex space-x-1">
             <div class="w-1.5 h-1.5 rounded-full bg-blue-500/20"></div>
             <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40"></div>
           </div>
         </div>
-        <pre class="p-6 font-mono text-[11px] md:text-xs text-blue-100/90 overflow-x-auto selection:bg-blue-500/30"><code>${code.trim()}</code></pre>
+        <pre class="p-4 font-mono text-[11px] md:text-xs text-blue-100/90 overflow-x-auto selection:bg-blue-500/30"><code>${code.trim()}</code></pre>
       </div>`;
     });
 
@@ -147,7 +147,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     try {
       const searchResults = await ragEngine.search(userMsg.content, config);
       const strategy = searchResults[0]?.strategyUsed || 'semantic';
-      setReasoning(isMobile ? "Generating..." : `Synthesizing neural output [${strategy}]...`);
+      setReasoning(isMobile ? "Generating..." : `Synthesizing study output [${strategy}]...`);
       const res = await geminiService.generateAnswer(userMsg.content, searchResults, { ...config, deviceType: isMobile ? 'mobile' : 'desktop' } as any);
 
       const assistantMsg: ChatMessage = {
@@ -184,10 +184,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-12 space-y-10 md:space-y-20 scroll-smooth min-h-0">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-16 md:py-32 animate-in fade-in zoom-in-95 duration-1000">
-            <div className="text-white font-black italic text-9xl md:text-[12rem] opacity-[0.03] mb-12 select-none pointer-events-none">A</div>
-            <h2 className="text-2xl md:text-5xl font-black text-white mb-6 tracking-tighter uppercase italic drop-shadow-[0_0_30px_rgba(59,130,246,0.2)]">Neural Workspace</h2>
+            <div className="text-white font-black italic text-9xl md:text-[12rem] opacity-[0.03] mb-12 select-none pointer-events-none">E</div>
+            <h2 className="text-2xl md:text-5xl font-black text-white mb-6 tracking-tighter uppercase italic drop-shadow-[0_0_30px_rgba(59,130,246,0.2)]">Study Workspace</h2>
             <p className="text-blue-500/40 text-[10px] md:text-xs max-w-[300px] md:max-w-md leading-relaxed font-black uppercase tracking-[0.5em]">
-              Intelligence Matrix Active
+              EduHub Intelligence Active
             </p>
           </div>
         )}
@@ -201,7 +201,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               {msg.strategy && <span className="text-[9px] font-mono text-blue-500/40 font-bold uppercase tracking-tighter">:: {msg.strategy}</span>}
             </div>
 
-            <div className={`glass p-6 md:p-12 rounded-3xl md:rounded-[3rem] max-w-[98%] md:max-w-[90%] border-white/5 shadow-2xl transition-all duration-500 hover:border-blue-500/20 ${msg.role === 'user' ? 'bg-blue-600/5 border-blue-500/40 shadow-blue-500/5' : 'bg-[#0a0f18]/80'
+            <div className={`glass p-5 md:p-8 rounded-2xl md:rounded-[2rem] max-w-[98%] md:max-w-[85%] border-white/5 shadow-xl transition-all duration-500 hover:border-blue-500/20 ${msg.role === 'user' ? 'bg-blue-600/5 border-blue-500/40 shadow-blue-500/5' : 'bg-[#0a0f18]/80'
               }`}>
               <div className="text-slate-200">
                 {renderMarkdown(msg.content)}
@@ -240,7 +240,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             <div className="flex items-center space-x-3 px-3">
               <span className="text-[11px] font-black text-blue-500 uppercase tracking-[0.5em] animate-pulse">{reasoning}</span>
             </div>
-            {/* High-End Cinematic Netflix-style "Neural Scanning" Animation */}
+            {/* High-End Cinematic Netflix-style "Data Scanning" Animation */}
             <div className="w-full glass rounded-[3rem] p-12 border-blue-500/10 bg-blue-500/5 relative overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent -translate-x-full animate-[loading_1.8s_infinite_linear] skew-x-[25deg]"></div>
 

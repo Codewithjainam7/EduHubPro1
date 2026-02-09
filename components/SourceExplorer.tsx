@@ -32,7 +32,7 @@ const SourceExplorer: React.FC<SourceExplorerProps> = ({ isOpen, onClose, result
         <div className={`p-10 md:p-14 border-b border-white/5 flex items-center justify-between bg-black/50 ${isMobile ? 'rounded-t-[4rem]' : ''}`}>
           <div className="flex-1">
             <h3 className="text-3xl font-black text-white uppercase tracking-tighter italic">Knowledge Shards</h3>
-            <p className="text-[11px] text-blue-500 font-black uppercase tracking-[0.5em] mt-3">Neural Matrix Inspection</p>
+            <p className="text-[11px] text-blue-500 font-black uppercase tracking-[0.5em] mt-3">Knowledge Matrix Inspection</p>
           </div>
           <button
             onClick={onClose}
@@ -58,7 +58,7 @@ const SourceExplorer: React.FC<SourceExplorerProps> = ({ isOpen, onClose, result
                     </span>
                   )}
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Neural Asset</span>
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Knowledge Asset</span>
                     <span className="text-sm font-black text-slate-300 truncate max-w-[220px] italic">
                       {res.chunk.metadata.sourceFileName}
                     </span>
@@ -103,7 +103,7 @@ const SourceExplorer: React.FC<SourceExplorerProps> = ({ isOpen, onClose, result
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </div>
             <p className="text-[11px] text-slate-600 uppercase font-black leading-relaxed tracking-widest italic opacity-80">
-              Shards are prioritized by <span className="text-blue-500">Multimodal Neural Vectors</span> and Contextual Similarity scores.
+              Shards are prioritized by <span className="text-blue-500">Multimodal Context Vectors</span> and Contextual Similarity scores.
             </p>
           </div>
         </div>

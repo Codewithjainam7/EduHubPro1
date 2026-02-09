@@ -73,7 +73,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
       onIngest(doc);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
-      setError(err.message || "Neural Link Error.");
+      setError(err.message || "System Link Error.");
     } finally {
       setIsProcessing(false);
     }

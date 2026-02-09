@@ -5,9 +5,10 @@ import { RagConfig } from '../types';
 interface SettingsPanelProps {
   config: RagConfig;
   onChange: (config: RagConfig) => void;
+  onClearData: () => void;
 }
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange, onClearData }) => {
   const handleChange = (name: string, value: any) => {
     onChange({ ...config, [name]: value });
   };
@@ -23,7 +24,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
     <div className="p-4 md:p-6 bg-[#0d1117]/90 backdrop-blur-3xl border border-white/10 rounded-2xl md:rounded-3xl shadow-2xl animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
-          
+
           {/* RETRIEVAL CONTROL */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -35,11 +36,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
                 <button
                   key={p.label}
                   onClick={() => handleChange('topK', p.val)}
-                  className={`px-3 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border ${
-                    config.topK === p.val 
-                      ? 'bg-blue-600 border-blue-400 text-white shadow-lg' 
-                      : 'bg-black/40 border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/10'
-                  }`}
+                  className={`px-3 py-2.5 rounded-xl text-[9px] font-black uppercase transition-all border ${config.topK === p.val
+                    ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
+                    : 'bg-black/40 border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/10'
+                    }`}
                 >
                   {p.label}
                 </button>
@@ -56,12 +56,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
               </span>
             </div>
             <div className="px-1">
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.1" 
-                value={config.temperature} 
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={config.temperature}
                 onChange={(e) => handleChange('temperature', parseFloat(e.target.value))}
                 className="w-full h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer accent-blue-500 hover:accent-blue-400 transition-all"
               />
@@ -82,11 +82,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
                   <button
                     key={mode}
                     onClick={() => handleChange('strictness', mode)}
-                    className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${
-                      config.strictness === mode 
-                        ? 'bg-slate-800 text-blue-400 shadow-inner' 
-                        : 'text-slate-600 hover:text-slate-400'
-                    }`}
+                    className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${config.strictness === mode
+                      ? 'bg-slate-800 text-blue-400 shadow-inner'
+                      : 'text-slate-600 hover:text-slate-400'
+                      }`}
                   >
                     {mode}
                   </button>
@@ -97,17 +96,26 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ config, onChange }) => {
                   <button
                     key={depth}
                     onClick={() => handleChange('answerDepth', depth)}
-                    className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${
-                      config.answerDepth === depth 
-                        ? 'bg-slate-800 text-indigo-400 shadow-inner' 
-                        : 'text-slate-600 hover:text-slate-400'
-                    }`}
+                    className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${config.answerDepth === depth
+                      ? 'bg-slate-800 text-indigo-400 shadow-inner'
+                      : 'text-slate-600 hover:text-slate-400'
+                      }`}
                   >
                     {depth}
                   </button>
                 ))}
               </div>
             </div>
+          </div>
+
+          {/* DANGER SCOPE */}
+          <div className="pt-6 border-t border-white/5">
+            <button
+              onClick={onClearData}
+              className="w-full py-4 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-500 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all shadow-lg shadow-rose-900/20 active:scale-95"
+            >
+              System Reset (Clear Data)
+            </button>
           </div>
 
         </div>

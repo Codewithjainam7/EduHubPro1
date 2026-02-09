@@ -39,8 +39,23 @@ const App: React.FC = () => {
       addToast(`Restored ${savedDocs.length} assets from memory matrix.`, 'info');
     }
 
+    // Load persisted chat history
+    const savedMessages = localStorage.getItem('eduhub_chat_history');
+    if (savedMessages) {
+      try {
+        setMessages(JSON.parse(savedMessages));
+      } catch (e) {
+        console.error('Failed to parse chat history', e);
+      }
+    }
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Save chat history whenever it changes
+  useEffect(() => {
+    localStorage.setItem('eduhub_chat_history', JSON.stringify(messages));
+  }, [messages]);
 
   const addToast = (message: string, type: Toast['type'] = 'success') => {
     const id = uuidv4();
@@ -54,7 +69,7 @@ const App: React.FC = () => {
 
   const handleFlashcardsGenerated = (cards: Flashcard[]) => {
     setFlashcards(prev => [...cards, ...prev]);
-    addToast(`Neural Extraction: ${cards.length} Concepts Indexed`);
+    addToast(`Knowledge Extraction: ${cards.length} Concepts Indexed`);
     setActiveTab('Flashcards');
   };
 
@@ -121,6 +136,19 @@ const App: React.FC = () => {
       addToast(err.message || "Neural Link Error.", 'error');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleClearData = () => {
+    if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+      localStorage.removeItem('eduhub_chat_history');
+      localStorage.removeItem('eduhub_rag_state');
+      setDocuments([]);
+      setMessages([]);
+      setFlashcards([]);
+      setAuditLogs([]);
+      addToast('System Reset: All data purged.', 'info');
+      addAudit('System Reset', 'User cleared all data.');
     }
   };
 
@@ -200,7 +228,7 @@ const App: React.FC = () => {
         </header>
 
         <div className={`transition-all duration-700 ease-in-out overflow-hidden shrink-0 ${showSettings ? 'max-h-[600px] opacity-100 mb-4 px-4' : 'max-h-0 opacity-0'}`}>
-          <SettingsPanel config={config} onChange={setConfig} />
+          <SettingsPanel config={config} onChange={setConfig} onClearData={handleClearData} />
         </div>
 
         {/* SECTION CONTAINER WITH TRANSITION */}
