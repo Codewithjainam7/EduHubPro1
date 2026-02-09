@@ -84,31 +84,57 @@ export class GeminiService {
 
     const prompt = `QUERY: ${query}\n\nCONTEXT:\n${contextText}${deviceConstraint}`;
 
-    const response = await ai.models.generateContent({
-      model: config.modelName,
-      contents: prompt,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        temperature: config.temperature,
-        responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA as any,
-      },
-    });
+    // Retry logic for 429 errors
+    let retryCount = 0;
+    const maxRetries = 3;
 
-    try {
-      const rawText = response.text || '{}';
-      return JSON.parse(rawText) as AiResponse;
-    } catch (e) {
-      return {
-        answer: "Synthesis error.",
-        confidence: 0,
-        reasoning: "Error",
-        followUps: [],
-        assumptions: [],
-        scope: 'narrow',
-        inconsistencyDetected: false
-      };
+    while (retryCount <= maxRetries) {
+      try {
+        const response = await ai.models.generateContent({
+          model: config.modelName,
+          contents: prompt,
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            temperature: config.temperature,
+            responseMimeType: "application/json",
+            responseSchema: RESPONSE_SCHEMA as any,
+          },
+        });
+
+        const rawText = response.text || '{}';
+        return JSON.parse(rawText) as AiResponse;
+
+      } catch (e: any) {
+        if (e.message?.includes('429') && retryCount < maxRetries) {
+          retryCount++;
+          const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
+          console.warn(`Gemini API 429 error. Retrying in ${waitTime}ms... (Attempt ${retryCount}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+
+        console.error("Gemini API Error:", e);
+        return {
+          answer: `System Overload (Error 429). Please try again in a moment.`,
+          confidence: 0,
+          reasoning: "API Rate Limit Exceeded",
+          followUps: [],
+          assumptions: [],
+          scope: 'narrow',
+          inconsistencyDetected: false
+        };
+      }
     }
+
+    return {
+      answer: "System Error: Max retries exceeded.",
+      confidence: 0,
+      reasoning: "Critical Failure",
+      followUps: [],
+      assumptions: [],
+      scope: 'narrow',
+      inconsistencyDetected: false
+    };
   }
 }
 
