@@ -91,16 +91,18 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     let inList = false;
     const finalLines: string[] = [];
 
-    lines.forEach(line => {
+    lines.forEach((line, index) => {
       const trimmed = line.trim();
+      const delay = index * 50; // Staggered animation delay
+
       if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
         if (!inList) {
-          finalLines.push('<ul class="list-none space-y-4 mb-8">');
+          finalLines.push('<ul class="list-none space-y-3 mb-6 pl-2">');
           inList = true;
         }
-        finalLines.push(`<li class="flex items-start group">
-          <span class="w-2 h-2 bg-blue-500 rounded-sm mt-2 mr-4 shrink-0 shadow-[0_0_10px_rgba(59,130,246,0.5)] group-hover:scale-125 transition-transform"></span>
-          <span class="text-slate-300 leading-relaxed font-medium">${trimmed.substring(2)}</span>
+        finalLines.push(`<li class="flex items-start group animate-in slide-in-from-left-4 fade-in duration-500 fill-mode-backwards" style="animation-delay: ${delay}ms">
+          <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-3 shrink-0 shadow-[0_0_8px_rgba(59,130,246,0.6)] group-hover:scale-150 transition-transform duration-300"></span>
+          <span class="text-slate-300 leading-relaxed font-normal tracking-wide">${trimmed.substring(2)}</span>
         </li>`);
       } else {
         if (inList) {
@@ -108,7 +110,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           inList = false;
         }
         if (trimmed) {
-          finalLines.push(`<p class="mb-6 leading-relaxed text-slate-300 font-medium">${trimmed}</p>`);
+          // Paragraphs with subtle entry animation
+          finalLines.push(`<p class="mb-5 leading-loose text-slate-300 font-normal tracking-wide animate-in slide-in-from-bottom-2 fade-in duration-700 fill-mode-backwards" style="animation-delay: ${delay}ms">${trimmed}</p>`);
         }
       }
     });
@@ -118,11 +121,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     // 6. Citation "Shard" Tags - Support both with and without page numbers
     let finalHtml = finalLines.join('')
       .replace(/\[Source: (.*?), Page: (\d+), Chunk: (.*?)\]/g,
-        '<span class="inline-flex items-center px-2 py-1 mx-1 rounded-md bg-blue-600/10 border border-blue-500/40 text-[9px] font-mono text-blue-400 font-black uppercase tracking-tighter hover:bg-blue-600 hover:text-white transition-all cursor-help shadow-[0_0_10px_rgba(59,130,246,0.1)]">P$2 SHARD #$3</span>')
+        '<span class="inline-flex items-center px-2.5 py-0.5 mx-1.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[10px] font-mono text-blue-400 font-bold uppercase tracking-wider hover:bg-blue-500/20 hover:border-blue-500/50 transition-all cursor-help select-none">PAGE $2</span>')
       .replace(/\[Source: (.*?), Chunk: (.*?)\]/g,
-        '<span class="inline-flex items-center px-2 py-1 mx-1 rounded-md bg-blue-600/10 border border-blue-500/40 text-[9px] font-mono text-blue-400 font-black uppercase tracking-tighter hover:bg-blue-600 hover:text-white transition-all cursor-help shadow-[0_0_10px_rgba(59,130,246,0.1)]">SHARD #$2</span>');
+        '<span class="inline-flex items-center px-2.5 py-0.5 mx-1.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-[10px] font-mono text-blue-400 font-bold uppercase tracking-wider hover:bg-blue-500/20 hover:border-blue-500/50 transition-all cursor-help select-none">SHARD $2</span>');
 
-    return <div className="text-sm md:text-base selection:bg-blue-500/30" dangerouslySetInnerHTML={{ __html: finalHtml }} />;
+    return <div className="text-base md:text-lg selection:bg-blue-500/30 leading-relaxed" dangerouslySetInnerHTML={{ __html: finalHtml }} />;
   };
 
   const handleSend = async (textOverride?: string) => {
@@ -193,7 +196,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           <div key={msg.id} className={`flex flex-col animate-message ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
             <div className="flex items-center space-x-3 mb-4 px-3">
               <span className={`text-[10px] font-black uppercase tracking-[0.4em] ${msg.role === 'user' ? 'text-blue-500' : 'text-slate-600'}`}>
-                {msg.role === 'user' ? 'OPERATOR' : 'ARCHIRAG KERNEL'}
+                {msg.role === 'user' ? 'STUDENT' : 'EDUHUB SYSTEM'}
               </span>
               {msg.strategy && <span className="text-[9px] font-mono text-blue-500/40 font-bold uppercase tracking-tighter">:: {msg.strategy}</span>}
             </div>

@@ -1,5 +1,5 @@
 {
-  "name": "ArchiRAG: Enterprise Knowledge Engine",
-  "description": "A production-grade RAG chatbot featuring configurable chunking with overlap, semantic search via embeddings, and grounded answer generation with citations.",
+  "name": "EduHub Pro",
+  "description": "An AI-powered knowledge platform featuring document analysis, intelligent Q&A with citations, and flashcard generation for enhanced learning.",
   "requestFramePermissions": []
 }

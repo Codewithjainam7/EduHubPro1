@@ -82,8 +82,8 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   return (
     <div className="w-80 border-r border-white/5 h-full flex flex-col bg-[#05080f] text-slate-300">
       <div className="p-8 border-b border-white/5">
-        <h2 className="text-2xl font-black text-white mb-1 tracking-tighter italic uppercase">Knowledge</h2>
-        <p className="text-[10px] text-blue-500 font-black tracking-[0.4em] uppercase">Base Active</p>
+        <h2 className="text-2xl font-black text-white mb-1 tracking-tighter italic uppercase">Study Material</h2>
+        <p className="text-[10px] text-blue-500 font-black tracking-[0.4em] uppercase">Library Active</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">

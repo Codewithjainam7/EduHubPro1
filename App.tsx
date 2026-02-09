@@ -31,6 +31,14 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
+
+    // Load persisted documents
+    const savedDocs = ragEngine.getDocuments();
+    if (savedDocs.length > 0) {
+      setDocuments(savedDocs);
+      addToast(`Restored ${savedDocs.length} assets from memory matrix.`, 'info');
+    }
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -57,9 +65,10 @@ const App: React.FC = () => {
     if (isMobile) setActiveTab('Workspace');
   };
 
-  const handleRemoveDoc = (id: string) => {
+  const handleRemoveDoc = async (id: string) => {
     const doc = documents.find(d => d.id === id);
-    setDocuments(prev => prev.filter(d => d.id !== id));
+    await ragEngine.removeDocument(id);
+    setDocuments([...ragEngine.getDocuments()]);
     addToast(`Link Severed: ${doc?.fileName || 'Asset'} removed`, 'info');
     addAudit('Asset Purged', `Removed ${doc?.fileName} from matrix.`);
   };
@@ -156,9 +165,9 @@ const App: React.FC = () => {
           <div className="flex items-center space-x-6 md:space-x-16">
             <div className="group cursor-pointer">
               <h1 className="text-2xl md:text-3xl font-black text-white tracking-tighter italic">
-                ARCHI<span className="text-blue-500">RAG</span>
+                EDU<span className="text-blue-500">HUB</span> PRO
               </h1>
-              <span className="hidden md:inline-block text-[10px] text-slate-500 font-black uppercase tracking-[0.5em] mt-1">Operational Kernel</span>
+              <span className="hidden md:inline-block text-[10px] text-slate-500 font-black uppercase tracking-[0.5em] mt-1">Advanced Learning Matrix</span>
             </div>
 
             {!isMobile && (

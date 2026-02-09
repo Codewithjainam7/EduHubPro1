@@ -13,6 +13,36 @@ import { geminiService } from './geminiService';
 export class RagEngine {
   private documents: IngestedDocument[] = [];
   private vectorStore: DocumentChunk[] = [];
+  private readonly STORAGE_KEY = 'eduhub_rag_state';
+
+  constructor() {
+    this.loadState();
+  }
+
+  private saveState() {
+    try {
+      const state = {
+        documents: this.documents,
+        vectorStore: this.vectorStore
+      };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn('Failed to save state to localStorage (quota exceeded?)', e);
+    }
+  }
+
+  private loadState() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved) {
+        const state = JSON.parse(saved);
+        this.documents = state.documents || [];
+        this.vectorStore = state.vectorStore || [];
+      }
+    } catch (e) {
+      console.error('Failed to load state', e);
+    }
+  }
 
   private normalizeText(text: string): string {
     return text
@@ -138,6 +168,7 @@ export class RagEngine {
 
     this.documents.push(doc);
     this.vectorStore.push(...allChunks);
+    this.saveState();
     return doc;
   }
 
@@ -176,7 +207,17 @@ export class RagEngine {
 
     this.documents.push(doc);
     this.vectorStore.push(...chunks);
+    this.saveState();
     return doc;
+  }
+
+  /**
+   * Remove a document and its chunks from the store
+   */
+  async removeDocument(id: string): Promise<void> {
+    this.documents = this.documents.filter(d => d.id !== id);
+    this.vectorStore = this.vectorStore.filter(c => c.metadata.documentId !== id);
+    this.saveState();
   }
 
   /**
