@@ -9,6 +9,36 @@ export class GeminiService {
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
+  /**
+   * Retry wrapper with exponential backoff for handling 429 errors
+   */
+  private async withRetry<T>(
+    operation: () => Promise<T>,
+    operationName: string = 'API Call'
+  ): Promise<T> {
+    const maxRetries = 5;
+    const baseDelay = 2000;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (e: any) {
+        const is429 = e.message?.includes('429') || e.status === 429;
+        const is503 = e.message?.includes('503') || e.status === 503;
+        const isRetryable = is429 || is503;
+
+        if (isRetryable && attempt < maxRetries) {
+          const waitTime = baseDelay * Math.pow(2, attempt); // 2s, 4s, 8s, 16s, 32s
+          console.warn(`[${operationName}] Rate limited (attempt ${attempt + 1}/${maxRetries}). Retrying in ${waitTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw new Error(`[${operationName}] Max retries exceeded`);
+  }
+
   async getEmbedding(text: string, model: string): Promise<number[]> {
     const size = 1024;
     const vector = new Array(size).fill(0);
@@ -29,28 +59,32 @@ export class GeminiService {
 
   async generateFlashcards(text: string): Promise<Flashcard[]> {
     const ai = this.getAI();
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `Extract 3-5 key concepts from this text and turn them into Flashcards (Question and Answer pairs). 
-      Text: ${text}`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              question: { type: Type.STRING },
-              answer: { type: Type.STRING }
-            },
-            required: ["question", "answer"]
-          }
-        }
-      }
-    });
 
     try {
-      const data = JSON.parse(response.text || '[]');
+      const response = await this.withRetry(
+        () => ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: `Extract 3-5 key concepts from this text and turn them into Flashcards (Question and Answer pairs). 
+          Text: ${text}`,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING },
+                  answer: { type: Type.STRING }
+                },
+                required: ["question", "answer"]
+              }
+            }
+          }
+        }),
+        'generateFlashcards'
+      );
+
+      const data = JSON.parse((response as any).text || '[]');
       return data.map((item: any) => ({
         id: uuidv4(),
         ...item,
@@ -58,6 +92,7 @@ export class GeminiService {
         sourceDoc: "Derived Knowledge"
       }));
     } catch (e) {
+      console.error('Flashcard generation failed after retries:', e);
       return [];
     }
   }
@@ -84,13 +119,9 @@ export class GeminiService {
 
     const prompt = `QUERY: ${query}\n\nCONTEXT:\n${contextText}${deviceConstraint}`;
 
-    // Retry logic for 429 errors
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    while (retryCount <= maxRetries) {
-      try {
-        const response = await ai.models.generateContent({
+    try {
+      const response = await this.withRetry(
+        () => ai.models.generateContent({
           model: config.modelName,
           contents: prompt,
           config: {
@@ -99,42 +130,25 @@ export class GeminiService {
             responseMimeType: "application/json",
             responseSchema: RESPONSE_SCHEMA as any,
           },
-        });
+        }),
+        'generateAnswer'
+      );
 
-        const rawText = response.text || '{}';
-        return JSON.parse(rawText) as AiResponse;
+      const rawText = (response as any).text || '{}';
+      return JSON.parse(rawText) as AiResponse;
 
-      } catch (e: any) {
-        if (e.message?.includes('429') && retryCount < maxRetries) {
-          retryCount++;
-          const waitTime = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
-          console.warn(`Gemini API 429 error. Retrying in ${waitTime}ms... (Attempt ${retryCount}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          continue;
-        }
-
-        console.error("Gemini API Error:", e);
-        return {
-          answer: `System Overload (Error 429). Please try again in a moment.`,
-          confidence: 0,
-          reasoning: "API Rate Limit Exceeded",
-          followUps: [],
-          assumptions: [],
-          scope: 'narrow',
-          inconsistencyDetected: false
-        };
-      }
+    } catch (e: any) {
+      console.error("Gemini API Error after retries:", e);
+      return {
+        answer: `System Overload. Please try again in a moment.`,
+        confidence: 0,
+        reasoning: "API Rate Limit Exceeded",
+        followUps: [],
+        assumptions: [],
+        scope: 'narrow',
+        inconsistencyDetected: false
+      };
     }
-
-    return {
-      answer: "System Error: Max retries exceeded.",
-      confidence: 0,
-      reasoning: "Critical Failure",
-      followUps: [],
-      assumptions: [],
-      scope: 'narrow',
-      inconsistencyDetected: false
-    };
   }
 }
 
