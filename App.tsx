@@ -32,12 +32,15 @@ const App: React.FC = () => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
 
-    // Load persisted documents
-    const savedDocs = ragEngine.getDocuments();
-    if (savedDocs.length > 0) {
-      setDocuments(savedDocs);
-      addToast(`Restored ${savedDocs.length} assets from memory matrix.`, 'info');
-    }
+    // Load persisted documents (async)
+    const loadPersistedData = async () => {
+      const savedDocs = await ragEngine.getDocuments();
+      if (savedDocs.length > 0) {
+        setDocuments(savedDocs);
+        addToast(`Restored ${savedDocs.length} assets from memory matrix.`, 'info');
+      }
+    };
+    loadPersistedData();
 
     // Load persisted chat history
     const savedMessages = localStorage.getItem('eduhub_chat_history');
@@ -83,7 +86,7 @@ const App: React.FC = () => {
   const handleRemoveDoc = async (id: string) => {
     const doc = documents.find(d => d.id === id);
     await ragEngine.removeDocument(id);
-    setDocuments([...ragEngine.getDocuments()]);
+    setDocuments([...(await ragEngine.getDocuments())]);
     addToast(`Link Severed: ${doc?.fileName || 'Asset'} removed`, 'info');
     addAudit('Asset Purged', `Removed ${doc?.fileName} from matrix.`);
   };

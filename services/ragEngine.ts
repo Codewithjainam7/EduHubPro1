@@ -14,10 +14,14 @@ import { storageService } from './storageService';
 export class RagEngine {
   private documents: IngestedDocument[] = [];
   private vectorStore: DocumentChunk[] = [];
-  private isInitialized = false;
+  private initPromise: Promise<void>;
 
   constructor() {
-    this.loadState();
+    this.initPromise = this.loadState();
+  }
+
+  async ensureInitialized(): Promise<void> {
+    await this.initPromise;
   }
 
   private async saveState() {
@@ -30,7 +34,7 @@ export class RagEngine {
     }
   }
 
-  private async loadState() {
+  private async loadState(): Promise<void> {
     try {
       const docs = await storageService.loadDocuments();
       const chunks = await storageService.loadChunks();
@@ -41,14 +45,12 @@ export class RagEngine {
         chunks: chunks.filter(c => c.metadata.documentId === doc.id)
       }));
       this.vectorStore = chunks;
-      this.isInitialized = true;
 
       if (docs.length > 0) {
         console.log(`Loaded ${docs.length} documents from IndexedDB`);
       }
     } catch (e) {
       console.error('Failed to load state from IndexedDB:', e);
-      this.isInitialized = true;
     }
   }
 
@@ -269,7 +271,8 @@ export class RagEngine {
       .slice(0, config.topK);
   }
 
-  getDocuments() {
+  async getDocuments(): Promise<IngestedDocument[]> {
+    await this.ensureInitialized();
     return this.documents;
   }
 }
